@@ -40,6 +40,8 @@
         <Content Include="..\.files\AssemblyInfo.Version.tt">
           <Link>Properties\AssemblyInfo.Version.tt</Link>
           <DependentUpon>AssemblyInfo.cs</DependentUpon>
+          <Generator>TextTemplatingFileGenerator</Generator>
+          <LastGenOutput>AssemblyInfo.Version.cs</LastGenOutput>
         </Content>
         <Content Include="appsettings.json">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -58,6 +60,7 @@
         </Compile>
         <Compile Include="..\.files\AssemblyInfo.Version.cs">
           <Link>Properties\AssemblyInfo.Version.cs</Link>
+          <DependentUpon>AssemblyInfo.Version.tt</DependentUpon>
         </Compile>
         <None Update="..\.files\AssemblyInfo.Version.tt">
             <Generator>TextTemplatingFileGenerator</Generator>
