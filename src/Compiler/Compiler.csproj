@@ -1,0 +1,74 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net6.0-windows</TargetFramework>
+        <Nullable>disable</Nullable>
+        <ImplicitUsings>disable</ImplicitUsings>
+        <LangVersion>latest</LangVersion>
+        <LangVersion>default</LangVersion>
+        <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+        <Deterministic>false</Deterministic>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="bzip2" Version="1.0.6.11" />
+        <PackageReference Include="CommandLineParser" Version="2.9.1" />
+        <PackageReference Include="Microsoft.Extensions.Configuration" Version="6.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="6.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Configuration.CommandLine" Version="6.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="6.0.0" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="6.0.0" />
+        <PackageReference Include="Serilog" Version="2.10.0" />
+        <PackageReference Include="Serilog.Enrichers.Environment" Version="2.2.0" />
+        <PackageReference Include="Serilog.Enrichers.Process" Version="2.0.2" />
+        <PackageReference Include="Serilog.Enrichers.Thread" Version="3.1.0" />
+        <PackageReference Include="Serilog.Extensions.Logging" Version="3.1.0" />
+        <PackageReference Include="Serilog.Settings.Configuration" Version="3.3.0" />
+        <PackageReference Include="Serilog.Sinks.Console" Version="4.0.1" />
+        <PackageReference Include="ValveKeyValue" Version="0.8.2.162" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Remove="appsettings.json" />
+        <Content Include="..\.files\AssemblyInfo.General.tt">
+          <Link>Properties\AssemblyInfo.General.tt</Link>
+          <DependentUpon>AssemblyInfo.cs</DependentUpon>
+          <Generator>TextTemplatingFileGenerator</Generator>
+          <LastGenOutput>AssemblyInfo.General.cs</LastGenOutput>
+        </Content>
+        <Content Include="..\.files\AssemblyInfo.Version.tt">
+          <Link>Properties\AssemblyInfo.Version.tt</Link>
+          <DependentUpon>AssemblyInfo.cs</DependentUpon>
+        </Content>
+        <Content Include="appsettings.json">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <None Remove="appsettings.Development.json" />
+        <Content Include="appsettings.Development.json">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <DependentUpon>appsettings.json</DependentUpon>
+        </Content>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Compile Include="..\.files\AssemblyInfo.General.cs">
+          <Link>Properties\AssemblyInfo.General.cs</Link>
+          <DependentUpon>AssemblyInfo.General.tt</DependentUpon>
+        </Compile>
+        <Compile Include="..\.files\AssemblyInfo.Version.cs">
+          <Link>Properties\AssemblyInfo.Version.cs</Link>
+        </Compile>
+        <None Update="..\.files\AssemblyInfo.Version.tt">
+            <Generator>TextTemplatingFileGenerator</Generator>
+            <LastGenOutput>AssemblyInfo.Version.cs</LastGenOutput>
+            <DependentUpon>AssemblyInfo.cs</DependentUpon>
+        </None>
+        <None Update="..\.files\AssemblyInfo.General.tt">
+            <Generator>TextTemplatingFileGenerator</Generator>
+            <LastGenOutput>AssemblyInfo.General.cs</LastGenOutput>
+            <DependentUpon>AssemblyInfo.cs</DependentUpon>
+        </None>
+    </ItemGroup>
+
+</Project>

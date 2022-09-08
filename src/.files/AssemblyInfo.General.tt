@@ -1,0 +1,10 @@
+<#@ template language="C#" #>
+using System.Reflection;
+
+[assembly: AssemblyCompany("Alpaka")]
+[assembly: AssemblyCopyright("Copyright © <#= this.Year #>")]
+[assembly: AssemblyTrademark("Alpaka")]
+
+<#+
+    int Year = DateTime.Now.Year;
+#>

@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Compiler": {
+      "commandName": "Project",
+      "commandLineArgs": "--game \"F:\\Alpaka\\Gaming\\Repos\\srcds-maps\\.downloads\\243750\\hl2mp\" --source \"F:\\Alpaka\\Gaming\\Repos\\srcds-maps\\source-map-template\\src\" --verbose --outputs"
+    }
+  }
+}

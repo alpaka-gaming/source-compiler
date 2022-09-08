@@ -1,0 +1,35 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Compiler", "src\Compiler\Compiler.csproj", "{660E8E63-8A0E-4A27-BA70-D346AEF23106}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{A90E1B51-E49A-43F7-A696-182F7FE8CB3A}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".files", ".files", "{37C7C51D-7A8C-41F0-B416-CFE891C3F065}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+		.gitattributes = .gitattributes
+		.gitignore = .gitignore
+		CHANGELOG.md = CHANGELOG.md
+		LICENSE = LICENSE
+		README.md = README.md
+		src\.files\AssemblyInfo.General.cs = src\.files\AssemblyInfo.General.cs
+		src\.files\AssemblyInfo.General.tt = src\.files\AssemblyInfo.General.tt
+		src\.files\AssemblyInfo.Version.tt = src\.files\AssemblyInfo.Version.tt
+		src\.files\AssemblyInfo.Version.cs = src\.files\AssemblyInfo.Version.cs
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{660E8E63-8A0E-4A27-BA70-D346AEF23106}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{660E8E63-8A0E-4A27-BA70-D346AEF23106}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{660E8E63-8A0E-4A27-BA70-D346AEF23106}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{660E8E63-8A0E-4A27-BA70-D346AEF23106}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{660E8E63-8A0E-4A27-BA70-D346AEF23106} = {A90E1B51-E49A-43F7-A696-182F7FE8CB3A}
+	EndGlobalSection
+EndGlobal
