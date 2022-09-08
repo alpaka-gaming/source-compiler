@@ -1,8 +1,16 @@
 {
   "profiles": {
-    "Compiler": {
+    "Compiler - Fast": {
       "commandName": "Project",
-      "commandLineArgs": "--game \"F:\\Alpaka\\Gaming\\Repos\\srcds-maps\\.downloads\\243750\\hl2mp\" --source \"F:\\Alpaka\\Gaming\\Repos\\srcds-maps\\source-map-template\\src\" --verbose --outputs"
+      "commandLineArgs": "--profile fast --game \"F:\\Alpaka\\Gaming\\Repos\\srcds-maps\\.downloads\\243750\\hl2mp\" --source \"F:\\Alpaka\\Gaming\\Repos\\srcds-maps\\source-map-template\\src\" --verbose --outputs"
+    },
+    "Compiler - Normal": {
+      "commandName": "Project",
+      "commandLineArgs": "--profile normal --game \"F:\\Alpaka\\Gaming\\Repos\\srcds-maps\\.downloads\\243750\\hl2mp\" --source \"F:\\Alpaka\\Gaming\\Repos\\srcds-maps\\source-map-template\\src\" --verbose --outputs"
+    },
+    "Compiler - Publish": {
+      "commandName": "Project",
+      "commandLineArgs": "--profile publish --game \"F:\\Alpaka\\Gaming\\Repos\\srcds-maps\\.downloads\\243750\\hl2mp\" --source \"F:\\Alpaka\\Gaming\\Repos\\srcds-maps\\source-map-template\\src\" --verbose --outputs"
     }
   }
 }
