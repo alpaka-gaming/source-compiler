@@ -1,0 +1,16 @@
+{
+  "name": "Full - HDR",
+  "builders": {
+    "studiomdl": [
+      "-nop4"
+    ],
+    "vbsp": [""],
+    "vvis": [""],
+    "vrad": [
+      "-final",
+      "-StaticPropLighting",
+      "-StaticPropPolys",
+      "-hdr"
+    ]
+  }
+}

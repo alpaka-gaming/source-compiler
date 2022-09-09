@@ -1,0 +1,20 @@
+{
+  "name": "Full - Both",
+  "builders": {
+    "studiomdl": [
+      "-nop4"
+    ],
+    "vbsp": [
+      ""
+    ],
+    "vvis": [
+      ""
+    ],
+    "vrad": [
+      "-both",
+      "-final",
+      "-StaticPropLighting",
+      "-StaticPropPolys"
+    ]
+  }
+}

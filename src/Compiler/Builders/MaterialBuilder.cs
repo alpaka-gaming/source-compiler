@@ -2,6 +2,7 @@
 using System.IO;
 using System.Linq;
 using SourceSDK.Interfaces;
+using SourceSDK.Models;
 using ValveKeyValue;
 
 namespace SourceSDK.Builders
@@ -16,8 +17,13 @@ namespace SourceSDK.Builders
         public string FileFormat => "*.vmt";
 
         //TODO: Better implementation
-        public void Build(string file)
+        private Profile _profile;
+        public void Build(string file, Profile profile)
         {
+            _profile = profile;
+            
+            if (!File.Exists(Path.Combine(GamePath(), "gameinfo.txt"))) throw new FileNotFoundException("Unable to locate gameinfo.txt");
+
             var filePath = Path.GetDirectoryName(file);
             if (string.IsNullOrEmpty(filePath)) throw new NullReferenceException();
             var sourcePath = Path.Combine(filePath.Split($"\\{Folder}\\").First(), Folder);
@@ -28,7 +34,10 @@ namespace SourceSDK.Builders
             using (var stream = File.OpenRead(file))
             {
                 var kv = KVSerializer.Create(KVSerializationFormat.KeyValues1Text);
-                var options = new KVSerializerOptions { HasEscapeSequences = true };
+                var options = new KVSerializerOptions
+                {
+                    HasEscapeSequences = true
+                };
                 data = kv.Deserialize(stream, options);
             }
 

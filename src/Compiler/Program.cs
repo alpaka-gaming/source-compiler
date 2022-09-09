@@ -51,6 +51,8 @@ namespace SourceSDK
                 if (context == null) throw new NullReferenceException("Unable to locate the compiler context");
 
                 context.Options = Options;
+                
+                context.LoadProfile();
 
                 context.Progress += (_, e) =>
                 {

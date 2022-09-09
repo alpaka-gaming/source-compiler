@@ -1,0 +1,17 @@
+{
+  "name": "Fast",
+  "builders": {
+    "studiomdl": [
+      "-nop4"
+    ],
+    "vbsp": [""],
+    "vvis": [
+      "-fast",
+      "-nosort"
+    ],
+    "vrad": [
+      "-fast",
+      "-bounce 2"
+    ]
+  }
+}

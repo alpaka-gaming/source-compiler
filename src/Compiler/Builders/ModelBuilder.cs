@@ -6,6 +6,7 @@ using System.Text;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using SourceSDK.Interfaces;
+using SourceSDK.Models;
 
 namespace SourceSDK.Builders
 {
@@ -22,15 +23,18 @@ namespace SourceSDK.Builders
         public string Folder => "models";
         public string FileFormat => "*.qc";
 
-        public void Build(string file)
+        private Profile _profile;
+        public void Build(string file, Profile profile)
         {
+            _profile = profile;
+            if (!_profile.Builders.ContainsKey("studiomdl")) return;
             if (!File.Exists(Path.Combine(GamePath(), "gameinfo.txt"))) throw new FileNotFoundException("Unable to locate gameinfo.txt");
 
             var studiomdlPath = Path.GetFullPath(Path.Combine(GamePath(), "..", "bin", "studiomdl.exe"));
             if (!File.Exists(studiomdlPath)) throw new FileNotFoundException("Unable to locate studiomdl.exe");
 
-            var arguments = new List<string>();
-            _configuration.Bind("Builders:Model:Args", arguments);
+            var args = _profile.Builders["studiomdl"];
+            var arguments = new List<string>(args);
             arguments.Add($"-game \"{GamePath()}\"");
             if (Verbose()) arguments.Add("-verbose");
             arguments.Add($"\"{file}\"");

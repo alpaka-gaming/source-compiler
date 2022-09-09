@@ -5,6 +5,7 @@ using System.IO;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using SourceSDK.Interfaces;
+using SourceSDK.Models;
 
 namespace SourceSDK.Builders
 {
@@ -23,8 +24,12 @@ namespace SourceSDK.Builders
 
         public string Folder => "maps";
         public string FileFormat => "*.vmf";
-        public void Build(string file)
+
+        private Profile _profile;
+        public void Build(string file, Profile profile)
         {
+            _profile = profile;
+
             if (!File.Exists(Path.Combine(GamePath(), "gameinfo.txt"))) throw new FileNotFoundException("Unable to locate gameinfo.txt");
 
             vbsp(file);
@@ -35,72 +40,80 @@ namespace SourceSDK.Builders
 
         private void vbsp(string vmfFile)
         {
+            if (!_profile.Builders.ContainsKey("vbsp")) return;
+
             var vbspPath = Path.GetFullPath(Path.Combine(GamePath(), "..", "bin", "vbsp.exe"));
             if (!File.Exists(vbspPath)) throw new FileNotFoundException("Unable to locate vbsp.exe");
 
-            var args = new List<string>();
-            _configuration.Bind("Builders:Map:VBSP:Args", args);
-            args.Add($"-game \"{GamePath()}\"");
-            if (Verbose()) args.Add("-verbose");
+            var arguments = new List<string>(_profile.Builders["vbsp"]);
 
-            args.Add($"\"{vmfFile}\"");
+            arguments.Add($"-game \"{GamePath()}\"");
+            if (Verbose()) arguments.Add("-verbose");
+
+            arguments.Add($"\"{vmfFile}\"");
             var fileName = Path.GetFileName(vmfFile);
-            launchProcess(vbspPath, args, fileName);
+            launchProcess(vbspPath, arguments, fileName);
         }
         private void vvis(string vmfFile)
         {
+            if (!_profile.Builders.ContainsKey("vvis")) return;
+
             var vvisPath = Path.GetFullPath(Path.Combine(GamePath(), "..", "bin", "vvis.exe"));
             if (!File.Exists(vvisPath)) throw new FileNotFoundException("Unable to locate vvis.exe");
 
-            var args = new List<string>();
-            _configuration.Bind("Builders:Map:VVIS:Args", args);
-            args.Add($"-game \"{GamePath()}\"");
-            if (Verbose()) args.Add("-verbose");
+            var arguments = new List<string>(_profile.Builders["vvis"]);
+
+            arguments.Add($"-game \"{GamePath()}\"");
+            if (Verbose()) arguments.Add("-verbose");
 
             var bspFile = Path.ChangeExtension(vmfFile, "bsp");
-            args.Add($"\"{bspFile}\"");
+            arguments.Add($"\"{bspFile}\"");
             var fileName = Path.GetFileName(bspFile);
-            launchProcess(vvisPath, args, fileName);
+            launchProcess(vvisPath, arguments, fileName);
         }
         private void vrad(string file)
         {
+            if (!_profile.Builders.ContainsKey("vrad")) return;
+
             var vradPath = Path.GetFullPath(Path.Combine(GamePath(), "..", "bin", "vrad.exe"));
             if (!File.Exists(vradPath)) throw new FileNotFoundException("Unable to locate vrad.exe");
 
-            var args = new List<string>();
-            _configuration.Bind("Builders:Map:VRAD:Args", args);
-            args.Add($"-game \"{GamePath()}\"");
-            if (Verbose()) args.Add("-verbose");
+            var arguments = new List<string>(_profile.Builders["vrad"]);
+
+            arguments.Add($"-game \"{GamePath()}\"");
+            if (Verbose()) arguments.Add("-verbose");
 
             var bspFile = Path.ChangeExtension(file, "bsp");
-            args.Add($"\"{bspFile}\"");
+            arguments.Add($"\"{bspFile}\"");
             var fileName = Path.GetFileName(bspFile);
-            launchProcess(vradPath, args, fileName);
+            launchProcess(vradPath, arguments, fileName);
 
         }
 
         private void pack(string file)
         {
+            if (!_profile.Builders.ContainsKey("pack")) return;
+
             var bspzipPath = Path.GetFullPath(Path.Combine(GamePath(), "..", "bin", "bspzip.exe"));
             if (!File.Exists(bspzipPath)) throw new FileNotFoundException("Unable to locate bspzip.exe");
 
-            var args = new List<string>();
-            _configuration.Bind("Builders:Map:PACK:Args", args);
-            args.Add($"-game \"{GamePath()}\"");
+            var arguments = new List<string>(_profile.Builders["pack"]);
+
+            arguments.Add($"-game \"{GamePath()}\"");
             //if (Verbose()) args.Add("-verbose");
 
             var bspFile = Path.ChangeExtension(file, "bsp");
             var lstFile = Path.ChangeExtension(file, "lst");
 
-            args.Add($"-dir \"{bspFile}\"");
+            arguments.Add($"-dir \"{bspFile}\"");
             var fileName = Path.GetFileName(lstFile);
             if (File.Exists(fileName)) File.Delete(fileName);
-            launchProcess(bspzipPath, args, fileName, lstFile);
+            launchProcess(bspzipPath, arguments, fileName, lstFile);
 
             if (!File.Exists(lstFile)) throw new FileNotFoundException(lstFile);
 
-            var lstFileContent = File.ReadAllText(lstFile);
-            if (!string.IsNullOrWhiteSpace(lstFileContent)) { }
+            var lstFileContent = File.ReadAllLines(lstFile);
+            foreach (var line in lstFileContent) { }
 
         }
 
@@ -109,7 +122,10 @@ namespace SourceSDK.Builders
             var process = new Process();
             process.StartInfo = new ProcessStartInfo()
             {
-                FileName = executable, Arguments = string.Join(" ", arguments), UseShellExecute = false, RedirectStandardOutput = true,
+                FileName = executable,
+                Arguments = string.Join(" ", arguments.Distinct()),
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
                 CreateNoWindow = true
             };
 
@@ -121,7 +137,11 @@ namespace SourceSDK.Builders
                 while (!process.StandardOutput.EndOfStream)
                 {
                     var line = process.StandardOutput.ReadLine();
-                    if (!string.IsNullOrWhiteSpace(targetFile)) File.AppendAllLines(targetFile, new[] { line });
+                    if (!string.IsNullOrWhiteSpace(targetFile))
+                        File.AppendAllLines(targetFile, new[]
+                        {
+                            line
+                        });
                     if (Outputs()) _logger.LogInformation("[{Builder}] [{File}] {Line}", GetType().Name, fileName, line);
                 }
             process.WaitForExit();

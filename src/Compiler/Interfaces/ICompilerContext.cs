@@ -11,5 +11,8 @@ namespace SourceSDK.Interfaces
         void Compile(string source);
         
         event ProgressChangedEventHandler Progress;
+        void LoadProfile(string profile = "");
+        
+        Profile Profile { get; }
     }
 }

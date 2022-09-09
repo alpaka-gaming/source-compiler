@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using SourceSDK.Interfaces;
 using SourceSDK.Models;
@@ -61,7 +63,7 @@ namespace SourceSDK
                         {
                             var file = files[i];
                             _logger.LogInformation("[{Builder}] [{File}] [{Index}/{Total}]", builderName, Path.GetFileName(file), i + 1, files.Length);
-                            builder.Build(file);
+                            builder.Build(file, Profile);
                             progress = v + ((i * v) / files.Length);
                             OnProgress(new ProgressChangedEventArgs(progress, builderName));
                         }
@@ -78,6 +80,27 @@ namespace SourceSDK
         }
 
         public event ProgressChangedEventHandler Progress;
+        
+        public Profile Profile { get; private set; }
+        
+        public void LoadProfile(string profile = "normal")
+        {
+            if (string.IsNullOrWhiteSpace(profile)) profile = Options.Profile;
+            
+            var profileFile = Path.Combine("Profiles", $"{profile}.json");
+            if (!File.Exists(profileFile)) throw new FileNotFoundException("Profile file not found");
+
+            var profileBuilder = new ConfigurationBuilder()
+                .AddJsonFile(profileFile, false, true)
+                .Build();
+
+            Profile = new Profile()
+            {
+                Name = profileBuilder["name"],
+                Builders = new Dictionary<string,string[]>()
+            };
+            profileBuilder.GetSection("builders").Bind(Profile.Builders);
+        }
         private void OnProgress(ProgressChangedEventArgs e)
         {
             Progress?.Invoke(this, e);

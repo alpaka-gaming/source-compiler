@@ -1,0 +1,17 @@
+{
+  "name": "Normal",
+  "builders": {
+    "studiomdl": [
+      "-nop4"
+    ],
+    "vbsp": [
+      ""
+    ],
+    "vvis": [
+      ""
+    ],
+    "vrad": [
+      ""
+    ]
+  }
+}

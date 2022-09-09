@@ -1,0 +1,26 @@
+{
+  "name": "Publish - HDR",
+  "builders": {
+    "studiomdl": [
+      "-nop4"
+    ],
+    "vbsp": [
+      ""
+    ],
+    "vvis": [
+      ""
+    ],
+    "vrad": [
+      "-final",
+      "-StaticPropLighting",
+      "-StaticPropPolys",
+      "-ldr"
+    ],
+    "cubemaps": [
+      "-hidden"
+    ],
+    "pack": [
+      ""
+    ]
+  }
+}

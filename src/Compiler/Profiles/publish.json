@@ -1,0 +1,20 @@
+{
+  "name": "Publish - Both",
+  "builders": {
+    "studiomdl": [
+      "-nop4"
+    ],
+    "vbsp": [""],
+    "vvis": [""],
+    "vrad": [
+      "-final",
+      "-StaticPropLighting",
+      "-StaticPropPolys",
+      "-both"
+    ],
+    "cubemaps": [
+      "-hidden"
+    ],
+    "pack": [""]
+  }
+}

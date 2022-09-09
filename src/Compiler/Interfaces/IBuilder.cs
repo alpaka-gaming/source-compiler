@@ -1,4 +1,5 @@
 ﻿using System;
+using SourceSDK.Models;
 
 namespace SourceSDK.Interfaces
 {
@@ -9,6 +10,6 @@ namespace SourceSDK.Interfaces
         Func<bool> Outputs { get; set; }
         string FileFormat { get; }
         string Folder { get; }
-        void Build(string file);
+        void Build(string file, Profile profile);
     }
 }

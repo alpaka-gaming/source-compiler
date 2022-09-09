@@ -4,6 +4,10 @@ namespace SourceSDK.Models
 {
     public class Option
     {
+        
+        [Option('p', "profile", Required = false, Default = "normal", HelpText = "Set the build profile.")]
+        public string Profile { get; set; }
+        
         [Option('v', "verbose", Required = false, HelpText = "Set output to verbose messages.")]
         public bool Verbose { get; set; }
         
