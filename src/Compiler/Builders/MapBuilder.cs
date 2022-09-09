@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using SourceSDK.Interfaces;
@@ -36,6 +37,7 @@ namespace SourceSDK.Builders
             vvis(file);
             vrad(file);
             pack(file);
+            cubemaps(file);
         }
 
         private void vbsp(string vmfFile)
@@ -90,6 +92,66 @@ namespace SourceSDK.Builders
 
         }
 
+        private void cubemaps(string file)
+        {
+            if (!_profile.Builders.ContainsKey("cubemaps")) return;
+
+            var hlPath = Path.GetFullPath(Path.Combine(GamePath(), "..", "hl2.exe"));
+            if (!File.Exists(hlPath)) throw new FileNotFoundException("Unable to locate hl2.exe");
+
+            if (!Directory.Exists(Path.Combine(GamePath(), "bin")))
+            {
+                Directory.CreateDirectory(Path.Combine(GamePath(), "bin"));
+                File.Copy(Path.Combine(GamePath(), "..", "sourcetest", "bin", "client.dll"), Path.Combine(GamePath(), "bin", "client.dll"));
+                File.Copy(Path.Combine(GamePath(), "..", "sourcetest", "bin", "server.dll"), Path.Combine(GamePath(), "bin", "server.dll"));
+            }
+
+            var arguments = new List<string>(_profile.Builders["cubemaps"]);
+            if (arguments.Contains("-hidden"))
+            {
+                arguments.Remove("-hidden");
+                arguments.AddRange(new[]
+                {
+                    "-noborder", "-x 4000", "-y 2000"
+                });
+            }
+
+            arguments.Add("-steam");
+            arguments.Add($"-game \"{Path.GetFileName(GamePath())}\"");
+            arguments.Add("-novid");
+            arguments.Add("-nosound");
+            arguments.Add("+mat_specular 0");
+            arguments.Add("-buildcubemaps");
+
+            var bspFile = Path.ChangeExtension(file, "bsp");
+            var fileName = Path.GetFileName(bspFile);
+
+            if (!Directory.Exists(Path.Combine(GamePath(), "maps"))) Directory.CreateDirectory(Path.Combine(GamePath(), "maps"));
+            File.Copy(bspFile, Path.Combine(GamePath(), "maps", fileName), true);
+
+            arguments.Add($"+map {Path.GetFileNameWithoutExtension(fileName)}");
+            var both = arguments.Contains("-both");
+            if (both) arguments.Remove("-both");
+            
+            //TODO: Fetch HDR Levels
+
+            if ((arguments.Contains("-ldr") && !arguments.Contains("-hdr")) || both)
+            {
+                arguments.Remove("-ldr");
+                arguments.Remove("+mat_hdr_level 2");
+                arguments.Add("+mat_hdr_level 0");
+                launchProcess(hlPath, arguments, fileName);
+            }
+
+            if ((!arguments.Contains("-ldr") && arguments.Contains("-hdr")) || both)
+            {
+                arguments.Remove("-hdr");
+                arguments.Remove("+mat_hdr_level 0");
+                arguments.Add("+mat_hdr_level 2");
+                launchProcess(hlPath, arguments, fileName);
+            }
+
+        }
         private void pack(string file)
         {
             if (!_profile.Builders.ContainsKey("pack")) return;

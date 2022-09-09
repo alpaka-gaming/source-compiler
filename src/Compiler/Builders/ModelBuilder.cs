@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Text;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -46,7 +47,7 @@ namespace SourceSDK.Builders
             var process = new Process();
             process.StartInfo = new ProcessStartInfo()
             {
-                FileName = executable, Arguments = string.Join(" ", arguments), UseShellExecute = false, RedirectStandardOutput = true,
+                FileName = executable, Arguments = string.Join(" ", arguments.Distinct()), UseShellExecute = false, RedirectStandardOutput = true,
                 CreateNoWindow = true
             };
             
