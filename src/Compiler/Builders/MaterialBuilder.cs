@@ -21,7 +21,7 @@ namespace SourceSDK.Builders
         public void Build(string file, Profile profile)
         {
             _profile = profile;
-            
+
             if (!File.Exists(Path.Combine(GamePath(), "gameinfo.txt"))) throw new FileNotFoundException("Unable to locate gameinfo.txt");
 
             var filePath = Path.GetDirectoryName(file);
@@ -30,15 +30,22 @@ namespace SourceSDK.Builders
             var targetPath = Path.Join(GamePath(), Folder);
             if (!Directory.Exists(targetPath)) Directory.CreateDirectory(targetPath);
 
-            KVObject data;
-            using (var stream = File.OpenRead(file))
+            KVObject data = null;
+            try
             {
-                var kv = KVSerializer.Create(KVSerializationFormat.KeyValues1Text);
-                var options = new KVSerializerOptions
+                using (var stream = File.OpenRead(file))
                 {
-                    HasEscapeSequences = true
-                };
-                data = kv.Deserialize(stream, options);
+                    var kv = KVSerializer.Create(KVSerializationFormat.KeyValues1Text);
+                    var options = new KVSerializerOptions
+                    {
+                        HasEscapeSequences = true
+                    };
+                    data = kv.Deserialize(stream, options);
+                }
+            }
+            catch (Exception)
+            {
+                // ignored
             }
 
             var vmtSourceFile = file;
@@ -49,20 +56,21 @@ namespace SourceSDK.Builders
                 if (!Directory.Exists(vmtTargetFolder)) Directory.CreateDirectory(vmtTargetFolder);
                 File.Copy(vmtSourceFile, vmtTargetFile, true);
             }
-            foreach (var item in data)
-            {
-                var vtfSourceFile = Path.Combine(sourcePath, $"{item.Value}.vtf");
-                var vtfTargetFile = Path.Combine(targetPath, $"{item.Value}.vtf");
-                if (File.Exists(vtfSourceFile))
+            if (data != null)
+                foreach (var item in data)
                 {
-                    var vtfTargetFolder = Path.GetDirectoryName(vtfTargetFile);
-                    if (!string.IsNullOrWhiteSpace(vtfTargetFolder))
+                    var vtfSourceFile = Path.Combine(sourcePath, $"{item.Value}.vtf");
+                    var vtfTargetFile = Path.Combine(targetPath, $"{item.Value}.vtf");
+                    if (File.Exists(vtfSourceFile))
                     {
-                        if (!Directory.Exists(vtfTargetFolder)) Directory.CreateDirectory(vtfTargetFolder);
-                        File.Copy(vtfSourceFile, vtfTargetFile, true);
+                        var vtfTargetFolder = Path.GetDirectoryName(vtfTargetFile);
+                        if (!string.IsNullOrWhiteSpace(vtfTargetFolder))
+                        {
+                            if (!Directory.Exists(vtfTargetFolder)) Directory.CreateDirectory(vtfTargetFolder);
+                            File.Copy(vtfSourceFile, vtfTargetFile, true);
+                        }
                     }
                 }
-            }
 
         }
 

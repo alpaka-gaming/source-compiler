@@ -1,19 +1,6 @@
 {
   "name": "Test",
   "builders": {
-    "studiomdl": [
-      "-nop4"
-    ],
-    "vbsp": [""],
-    "vvis": [
-      "-fast",
-      "-nosort"
-    ],
-    "vrad": [
-      "-fast",
-      "-bounce 2"
-    ],
-    "cubemaps": ["-w 1024","-h 768","-both"],
     "pack": [""]
   }
 }

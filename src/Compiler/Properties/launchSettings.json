@@ -2,7 +2,7 @@
   "profiles": {
     "Compiler - Test": {
       "commandName": "Project",
-      "commandLineArgs": "--profile Test --game \"F:\\Alpaka\\Gaming\\Repos\\srcds-maps\\.downloads\\243750\\hl2mp\" --source \"F:\\Alpaka\\Gaming\\Repos\\srcds-maps\\source-map-template\\src\" --outputs"
+      "commandLineArgs": "--profile Test --game \"F:\\Alpaka\\Gaming\\Repos\\srcds-maps\\.downloads\\243750\\hl2mp\" --source \"F:\\Alpaka\\Gaming\\Repos\\srcds-maps\\dm_belisarium\\src\" --outputs"
     },
     "Compiler - Fast": {
       "commandName": "Project",

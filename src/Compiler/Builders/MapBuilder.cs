@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using SourceSDK.Interfaces;
@@ -132,7 +133,7 @@ namespace SourceSDK.Builders
             arguments.Add($"+map {Path.GetFileNameWithoutExtension(fileName)}");
             var both = arguments.Contains("-both");
             if (both) arguments.Remove("-both");
-            
+
             //TODO: Fetch HDR Levels
 
             if ((arguments.Contains("-ldr") && !arguments.Contains("-hdr")) || both)
@@ -164,19 +165,48 @@ namespace SourceSDK.Builders
             arguments.Add($"-game \"{GamePath()}\"");
             //if (Verbose()) args.Add("-verbose");
 
-            var bspFile = Path.ChangeExtension(file, "bsp");
-            var lstFile = Path.ChangeExtension(file, "lst");
+            var fileName = Path.GetFileName(file);
+            var bspFile = Path.ChangeExtension(Path.Combine(GamePath(), "maps", fileName), "bsp");
+            var bspOutFile = Path.ChangeExtension(Path.Combine(GamePath(), "maps", fileName), "new");
+            var lstFile = Path.ChangeExtension(bspFile, "lst");
+            
+            if (!File.Exists(bspFile))
+                File.Copy(Path.ChangeExtension(file, "bsp"), bspFile, true);
 
             arguments.Add($"-dir \"{bspFile}\"");
-            var fileName = Path.GetFileName(lstFile);
-            if (File.Exists(fileName)) File.Delete(fileName);
+            if (File.Exists(lstFile)) File.Delete(lstFile);
             launchProcess(bspzipPath, arguments, fileName, lstFile);
 
             if (!File.Exists(lstFile)) throw new FileNotFoundException(lstFile);
 
             var lstFileContent = File.ReadAllLines(lstFile);
-            foreach (var line in lstFileContent) { }
+            var validFiles = new List<string>();
+            foreach (var line in lstFileContent)
+            {
+                var filePath = Path.Combine(Path.Combine(GamePath(), line));
+                if (File.Exists(filePath))
+                    validFiles.Add(filePath);
+            }
 
+            if (validFiles.Any())
+            {
+                if (File.Exists(Path.ChangeExtension(lstFile, "tmp"))) File.Delete(Path.ChangeExtension(lstFile, "tmp"));
+                File.WriteAllLines(Path.ChangeExtension(lstFile, "tmp"), validFiles);
+
+                var arguments2 = new List<string>();
+                arguments2.Add($"-game \"{GamePath()}\"");
+                arguments2.Add($"-addlist \"{bspFile}\" \"{lstFile}\" \"{bspOutFile}\"");
+
+                launchProcess(bspzipPath, arguments2, fileName, lstFile);
+
+                if (File.Exists(bspOutFile))
+                    File.Copy(bspOutFile, Path.ChangeExtension(file, "bsp"), true);
+            }
+            else
+            {
+                if (File.Exists(bspFile))
+                    File.Copy(bspFile, Path.ChangeExtension(file, "bsp"), true);
+            }
         }
 
         private void launchProcess(string executable, IEnumerable<string> arguments, string fileName, string targetFile = "")
