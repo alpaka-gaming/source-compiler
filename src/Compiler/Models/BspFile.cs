@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using ValveKeyValue;
 
 namespace SourceSDK.Models
 {
@@ -14,7 +15,9 @@ namespace SourceSDK.Models
         private KeyValuePair<int, int>[] _offsets; // offset/length
         private BinaryReader _reader;
         private FileInfo _fileInfo;
-        
+
+        public FileInfo File => _fileInfo;
+
         private string _gameFolder;
 
         private Dictionary<string, List<string>> keys;
@@ -26,6 +29,19 @@ namespace SourceSDK.Models
             keys.Add("vmfMaterialKeys", new List<string>());
             keys.Add("vmtTextureKeyWords", new List<string>());
             keys.Add("vmtMaterialKeyWords", new List<string>());
+        }
+        public BspFile(string path, string gameFolder) : this()
+        {
+            _fileInfo = new FileInfo(path);
+            _gameFolder = gameFolder;
+        }
+
+        public bool RenameNav { get; set; }
+        public bool GenParticleManifest { get; set; }
+
+        public void Read()
+        {
+            Read(_fileInfo.FullName, _gameFolder);
         }
 
         public void Read(string path, string gameFolder)
@@ -76,6 +92,34 @@ namespace SourceSDK.Models
                 buildTextureList();
 
                 buildEntSoundList();
+
+                // var gameinfoFile = Path.Combine(gameFolder, "gameinfo.txt");
+                // if (!File.Exists(gameinfoFile)) throw new FileNotFoundException("Unable to locate gameinfo.txt");
+                //
+                //
+                // KVObject data = null;
+                // try
+                // {
+                //     using (var stream = File.OpenRead(gameinfoFile))
+                //     {
+                //         var kv = KVSerializer.Create(KVSerializationFormat.KeyValues1Text);
+                //         var options = new KVSerializerOptions
+                //         {
+                //             HasEscapeSequences = true
+                //         };
+                //         data = kv.Deserialize(stream, options);
+                //     }
+                // }
+                // catch (Exception)
+                // {
+                //     // ignored
+                // }
+                // var sourceDirectories = data.
+
+                findBspUtilityFiles(new List<string>(new[]
+                {
+                    gameFolder
+                }), RenameNav, GenParticleManifest);
             }
         }
 
@@ -513,6 +557,7 @@ namespace SourceSDK.Models
 
         #region IDisposable
 
+
         private void ReleaseUnmanagedResources()
         {
             // TODO release unmanaged resources here
@@ -538,6 +583,421 @@ namespace SourceSDK.Models
 
 
         #endregion
+
+        private List<string> findVmtMaterials(string fullpath)
+        {
+            // finds vmt files associated with vmt file
+
+            var vmtList = new List<string>();
+            foreach (var line in System.IO.File.ReadAllLines(fullpath))
+            {
+                var param = line.Replace("\"", " ").Replace("\t", " ").Trim();
+                if (keys["vmtMaterialKeyWords"].Any(key => param.StartsWith(key + " ")))
+                {
+                    vmtList.Add("materials/" + vmtPathParser2(line) + ".vmt");
+                }
+            }
+            return vmtList;
+        }
+
+        private string vmtPathParser2(string vmtline)
+        {
+            vmtline = vmtline.Trim(' ', '\t');
+
+            // remove key
+            if (vmtline[0] == '"')
+            {
+                vmtline = Regex.Match(vmtline, "\"[^\"]+\"(.*)$").Groups[1].Value;
+            }
+            else
+            {
+                vmtline = Regex.Match(vmtline, "[^ \t]+(.*)$").Groups[1].Value;
+            }
+
+            vmtline = vmtline.TrimStart(' ', '\t');
+            // process value
+            if (vmtline[0] == '"')
+            {
+                vmtline = Regex.Match(vmtline, "\"([^\"]+)\"").Groups[1].Value;
+            }
+            else
+            {
+                // strip c style comments like this one
+                var commentIndex = vmtline.IndexOf("//");
+                if (commentIndex > -1)
+                {
+                    vmtline = vmtline.Substring(0, commentIndex);
+                }
+                vmtline = Regex.Match(vmtline, "[^ \t]+").Groups[0].Value;
+            }
+
+            vmtline = vmtline.Trim(' ', '/', '\\'); // removes leading slashes
+            vmtline = vmtline.Replace('\\', '/'); // normalize slashes
+            vmtline = Regex.Replace(vmtline, "/+", "/"); // remove duplicate slashes
+
+            if (vmtline.StartsWith("materials/"))
+            {
+                vmtline = vmtline.Remove(0, "materials/".Length); // removes materials/ if its the beginning of the string for consistency
+            }
+            if (vmtline.EndsWith(".vmt") || vmtline.EndsWith(".vtf")) // removes extentions if present for consistency
+            {
+                vmtline = vmtline.Substring(0, vmtline.Length - 4);
+            }
+            return vmtline;
+        }
+
+        private void findBspUtilityFiles(List<string> sourceDirectories, bool renamenav, bool genparticlemanifest)
+        {
+            // Utility files are other files that are not assets and are sometimes not referenced in the bsp
+            // those are manifests, soundscapes, nav, radar and detail files
+            var bsp = this;
+
+            // Soundscape file
+            var internalPath = "scripts/soundscapes_" + bsp._fileInfo.Name.Replace(".bsp", ".txt");
+            // Soundscapes can have either .txt or .vsc extensions
+            var internalPathVsc = "scripts/soundscapes_" + bsp._fileInfo.Name.Replace(".bsp", ".vsc");
+            foreach (var source in sourceDirectories)
+            {
+                var externalPath = source + "/" + internalPath;
+                var externalVscPath = source + "/" + internalPathVsc;
+
+                if (System.IO.File.Exists(externalPath))
+                {
+                    bsp.soundscape = new KeyValuePair<string, string>(internalPath, externalPath);
+                    break;
+                }
+                if (System.IO.File.Exists(externalVscPath))
+                {
+                    bsp.soundscape = new KeyValuePair<string, string>(internalPathVsc, externalVscPath);
+                    break;
+                }
+            }
+
+            // Soundscript file
+            internalPath = "maps/" + bsp._fileInfo.Name.Replace(".bsp", "") + "_level_sounds.txt";
+            foreach (var source in sourceDirectories)
+            {
+                var externalPath = source + "/" + internalPath;
+
+                if (System.IO.File.Exists(externalPath))
+                {
+                    bsp.soundscript = new KeyValuePair<string, string>(internalPath, externalPath);
+                    break;
+                }
+            }
+
+            // Nav file (.nav)
+            internalPath = "maps/" + bsp._fileInfo.Name.Replace(".bsp", ".nav");
+            foreach (var source in sourceDirectories)
+            {
+                var externalPath = source + "/" + internalPath;
+
+                if (System.IO.File.Exists(externalPath))
+                {
+                    if (renamenav)
+                    {
+                        internalPath = "maps/embed.nav";
+                    }
+                    bsp.nav = new KeyValuePair<string, string>(internalPath, externalPath);
+                    break;
+                }
+            }
+
+            // detail file (.vbsp)
+            var worldspawn = bsp.entityList.First(item => item["classname"] == "worldspawn");
+            if (worldspawn.ContainsKey("detailvbsp"))
+            {
+                internalPath = worldspawn["detailvbsp"];
+
+                foreach (var source in sourceDirectories)
+                {
+                    var externalPath = source + "/" + internalPath;
+
+                    if (System.IO.File.Exists(externalPath))
+                    {
+                        bsp.detail = new KeyValuePair<string, string>(internalPath, externalPath);
+                        break;
+                    }
+                }
+            }
+
+
+            // Vehicle scripts
+            var vehicleScripts = new List<KeyValuePair<string, string>>();
+            foreach (var ent in bsp.entityList)
+            {
+                if (ent.ContainsKey("vehiclescript"))
+                {
+                    foreach (var source in sourceDirectories)
+                    {
+                        var externalPath = source + "/" + ent["vehiclescript"];
+                        if (System.IO.File.Exists(externalPath))
+                        {
+                            internalPath = ent["vehiclescript"];
+                            vehicleScripts.Add(new KeyValuePair<string, string>(ent["vehiclescript"], externalPath));
+                        }
+                    }
+                }
+            }
+            bsp.VehicleScriptList = vehicleScripts;
+
+            // Effect Scripts
+            var effectScripts = new List<KeyValuePair<string, string>>();
+            foreach (var ent in bsp.entityList)
+            {
+                if (ent.ContainsKey("scriptfile"))
+                {
+                    foreach (var source in sourceDirectories)
+                    {
+                        var externalPath = source + "/" + ent["scriptfile"];
+                        if (System.IO.File.Exists(externalPath))
+                        {
+                            internalPath = ent["scriptfile"];
+                            effectScripts.Add(new KeyValuePair<string, string>(ent["scriptfile"], externalPath));
+                        }
+                    }
+                }
+            }
+            bsp.EffectScriptList = effectScripts;
+
+            // Res file (for tf2's pd gamemode)
+            var pd_ent = bsp.entityList.FirstOrDefault(item => item["classname"] == "tf_logic_player_destruction");
+            if (pd_ent != null && pd_ent.ContainsKey("res_file"))
+            {
+                foreach (var source in sourceDirectories)
+                {
+                    var externalPath = source + "/" + pd_ent["res_file"];
+                    if (System.IO.File.Exists(externalPath))
+                    {
+                        bsp.res = new KeyValuePair<string, string>(pd_ent["res_file"], externalPath);
+                        break;
+                    }
+                }
+            }
+
+            // Radar file
+            internalPath = "resource/overviews/" + bsp._fileInfo.Name.Replace(".bsp", ".txt");
+            var ddsfiles = new List<KeyValuePair<string, string>>();
+            foreach (var source in sourceDirectories)
+            {
+                var externalPath = source + "/" + internalPath;
+
+                if (System.IO.File.Exists(externalPath))
+                {
+                    bsp.radartxt = new KeyValuePair<string, string>(internalPath, externalPath);
+                    bsp.TextureList.AddRange(findVmtMaterials(externalPath));
+
+                    var ddsInternalPaths = findRadarDdsFiles(externalPath);
+                    //find out if they exists or not
+                    foreach (var ddsInternalPath in ddsInternalPaths)
+                    {
+                        foreach (var source2 in sourceDirectories)
+                        {
+                            var ddsExternalPath = source2 + "/" + ddsInternalPath;
+                            if (System.IO.File.Exists(ddsExternalPath))
+                            {
+                                ddsfiles.Add(new KeyValuePair<string, string>(ddsInternalPath, ddsExternalPath));
+                                break;
+                            }
+                        }
+                    }
+                    break;
+                }
+            }
+            bsp.radardds = ddsfiles;
+
+            // csgo kv file (.kv)
+            internalPath = "maps/" + bsp._fileInfo.Name.Replace(".bsp", ".kv");
+            foreach (var source in sourceDirectories)
+            {
+                var externalPath = source + "/" + internalPath;
+
+                if (System.IO.File.Exists(externalPath))
+                {
+                    bsp.kv = new KeyValuePair<string, string>(internalPath, externalPath);
+                    break;
+                }
+            }
+
+            // csgo loading screen text file (.txt)
+            internalPath = "maps/" + bsp._fileInfo.Name.Replace(".bsp", ".txt");
+            foreach (var source in sourceDirectories)
+            {
+                var externalPath = source + "/" + internalPath;
+
+                if (System.IO.File.Exists(externalPath))
+                {
+                    bsp.txt = new KeyValuePair<string, string>(internalPath, externalPath);
+                    break;
+                }
+            }
+
+            // csgo loading screen image (.jpg)
+            internalPath = "maps/" + bsp._fileInfo.Name.Replace(".bsp", "");
+            foreach (var source in sourceDirectories)
+            {
+                var externalPath = source + "/" + internalPath;
+
+                foreach (var extension in new[]
+                {
+                    ".jpg", ".jpeg"
+                })
+                {
+                    if (System.IO.File.Exists(externalPath + extension))
+                    {
+                        bsp.jpg = new KeyValuePair<string, string>(internalPath + ".jpg", externalPath + extension);
+                    }
+                }
+            }
+
+            // csgo panorama map icons (.png)
+            internalPath = "materials/panorama/images/map_icons/screenshots/";
+            var panoramaMapIcons = new List<KeyValuePair<string, string>>();
+            foreach (var source in sourceDirectories)
+            {
+                var externalPath = source + "/" + internalPath;
+                var bspName = bsp._fileInfo.Name.Replace(".bsp", "");
+
+                foreach (var resolution in new[]
+                {
+                    "360p", "1080p"
+                })
+                {
+                    if (System.IO.File.Exists($"{externalPath}{resolution}/{bspName}.png"))
+                    {
+                        panoramaMapIcons.Add(new KeyValuePair<string, string>($"{internalPath}{resolution}/{bspName}.png", $"{externalPath}{resolution}/{bspName}.png"));
+                    }
+                }
+            }
+            bsp.PanoramaMapIcons = panoramaMapIcons;
+
+            // language files, particle manifests and soundscript file
+            // (these language files are localized text files for tf2 mission briefings)
+            var internalDir = "maps/";
+            var name = bsp._fileInfo.Name.Replace(".bsp", "");
+            var searchPattern = name + "*.txt";
+            var langfiles = new List<KeyValuePair<string, string>>();
+
+            foreach (var source in sourceDirectories)
+            {
+                var externalDir = source + "/" + internalDir;
+                var dir = new DirectoryInfo(externalDir);
+
+                if (dir.Exists)
+                {
+                    foreach (var f in dir.GetFiles(searchPattern))
+                    {
+                        // particle files if particle manifest is not being generated
+                        if (f.Name.StartsWith(name + "_particles") || f.Name.StartsWith(name + "_manifest"))
+                        {
+                            if (!genparticlemanifest)
+                            {
+                                bsp.particleManifest = new KeyValuePair<string, string>(internalDir + f.Name, externalDir + f.Name);
+                            }
+                            continue;
+                        }
+                        // soundscript
+                        if (f.Name.StartsWith(name + "_level_sounds"))
+                        {
+                            bsp.soundscript =
+                                new KeyValuePair<string, string>(internalDir + f.Name, externalDir + f.Name);
+                        }
+                        // presumably language files
+                        else
+                        {
+                            langfiles.Add(new KeyValuePair<string, string>(internalDir + f.Name, externalDir + f.Name));
+                        }
+                    }
+                }
+            }
+            bsp.languages = langfiles;
+
+            // ASW/Source2009 branch VScripts
+            var vscripts = new List<string>();
+
+            foreach (var entity in bsp.entityList)
+            {
+                foreach (var kvp in entity)
+                {
+                    if (kvp.Key.ToLower() == "vscripts")
+                    {
+                        var scripts = kvp.Value.Split(' ');
+                        foreach (var script in scripts)
+                        {
+                            vscripts.Add("scripts/vscripts/" + script);
+                        }
+                    }
+                }
+            }
+            bsp.vscriptList = vscripts;
+        }
+
+        private List<string> findRadarDdsFiles(string fullpath)
+        {
+            // finds vmt files associated with radar overview files
+
+            var DDSs = new List<string>();
+            var overviewFile = new FileData(fullpath);
+
+            // Contains no blocks, return empty list
+            if (overviewFile.headnode.subBlocks.Count == 0)
+            {
+                return DDSs;
+            }
+
+            foreach (var subblock in overviewFile.headnode.subBlocks)
+            {
+                var material = subblock.TryGetStringValue("material");
+                // failed to get material, file contains no materials
+                if (material == "")
+                {
+                    break;
+                }
+
+                // add default radar
+                DDSs.Add($"resource/{vmtPathParser(material, false)}_radar.dds");
+
+                var verticalSections = subblock.GetFirstByName("\"verticalsections\"");
+                if (verticalSections == null)
+                {
+                    break;
+                }
+
+                // add multi-level radars
+                foreach (var section in verticalSections.subBlocks)
+                {
+                    DDSs.Add($"resource/{vmtPathParser(material, false)}_{section.name.Replace("\"", string.Empty)}_radar.dds");
+                }
+            }
+
+            return DDSs;
+        }
+
+        private string vmtPathParser(string vmtline, bool needsSplit = true)
+        {
+            if (needsSplit)
+            {
+                vmtline = vmtline.Split(new[]
+                {
+                    ' '
+                }, 2)[1]; // removes the parameter name
+            }
+            vmtline = vmtline.Split(new[]
+            {
+                "//", "\\\\"
+            }, StringSplitOptions.None)[0]; // removes endline parameter
+            vmtline = vmtline.Trim(' ', '/', '\\'); // removes leading slashes
+            vmtline = vmtline.Replace('\\', '/'); // normalize slashes
+            if (vmtline.StartsWith("materials/"))
+            {
+                vmtline = vmtline.Remove(0, "materials/".Length); // removes materials/ if its the beginning of the string for consistency
+            }
+            if (vmtline.EndsWith(".vmt") || vmtline.EndsWith(".vtf")) // removes extentions if present for consistency
+            {
+                vmtline = vmtline.Substring(0, vmtline.Length - 4);
+            }
+            return vmtline;
+        }
 
     }
 }

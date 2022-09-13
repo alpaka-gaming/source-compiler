@@ -40,30 +40,41 @@ namespace SourceSDK.Builders
             if (Verbose()) arguments.Add("-verbose");
             arguments.Add($"\"{file}\"");
             var fileName = Path.GetFileName(file);
-            launchProcess(studiomdlPath, arguments, fileName);
+            //launchProcess(studiomdlPath, arguments, fileName);
+            Program.Launch(studiomdlPath, fileName, arguments: arguments.ToArray());
         }
-        private void launchProcess(string executable, IEnumerable<string> arguments, string fileName, string targetFile = "")
-        {
-            var process = new Process();
-            process.StartInfo = new ProcessStartInfo()
-            {
-                FileName = executable, Arguments = string.Join(" ", arguments.Distinct()), UseShellExecute = false, RedirectStandardOutput = true,
-                CreateNoWindow = true
-            };
-            
-            _logger.LogDebug("[{Builder}] [Executing] {FileName} {Arguments}", GetType().Name, process.StartInfo.FileName, process.StartInfo.Arguments);
-            
-            process.Start();
-
-            if (Outputs() || !string.IsNullOrWhiteSpace(targetFile))
-                while (!process.StandardOutput.EndOfStream)
-                {
-                    var line = process.StandardOutput.ReadLine();
-                    if (!string.IsNullOrWhiteSpace(targetFile)) File.AppendAllLines(targetFile, new[] { line });
-                    if (Outputs()) _logger.LogInformation("[{Builder}] [{File}] {Line}", GetType().Name, fileName, line);
-                }
-            process.WaitForExit();
-        }
+        
+        // private void launchProcess(string executable, IEnumerable<string> arguments, string fileName, string gameFolder = "", string targetFile = "")
+        // {
+        //     var process = new Process();
+        //     process.StartInfo = new ProcessStartInfo()
+        //     {
+        //         FileName = executable,
+        //         Arguments = string.Join(" ", arguments.Distinct()),
+        //         UseShellExecute = false,
+        //         RedirectStandardOutput = true,
+        //         CreateNoWindow = true
+        //     };
+        //     if (!string.IsNullOrWhiteSpace(gameFolder))
+        //         process.StartInfo.EnvironmentVariables["VPROJECT"] = gameFolder;
+        //
+        //     _logger.LogDebug("[{Builder}] [Executing] {FileName} {Arguments}", GetType().Name, process.StartInfo.FileName, process.StartInfo.Arguments);
+        //
+        //     process.Start();
+        //
+        //     if (Outputs() || !string.IsNullOrWhiteSpace(targetFile))
+        //         while (!process.StandardOutput.EndOfStream)
+        //         {
+        //             var line = process.StandardOutput.ReadLine();
+        //             if (!string.IsNullOrWhiteSpace(targetFile))
+        //                 File.AppendAllLines(targetFile, new[]
+        //                 {
+        //                     line
+        //                 });
+        //             if (Outputs()) _logger.LogInformation("[{Builder}] [{File}] {Line}", GetType().Name, fileName, line);
+        //         }
+        //     process.WaitForExit();
+        // }
 
         public Func<string> GamePath { get; set; }
         public Func<bool> Verbose { get; set; }

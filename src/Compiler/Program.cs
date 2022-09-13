@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
@@ -51,7 +53,7 @@ namespace SourceSDK
                 if (context == null) throw new NullReferenceException("Unable to locate the compiler context");
 
                 context.Options = Options;
-                
+
                 context.LoadProfile();
 
                 context.Progress += (_, e) =>
@@ -122,5 +124,50 @@ namespace SourceSDK
             }
         }
 
+        internal static string Launch(string executable, string file = "", string gameFolder = "", bool outputs = false, string targetFile = "", params string[] arguments)
+        {
+            if (!string.IsNullOrWhiteSpace(file) && !System.IO.File.Exists(file))
+                throw new FileNotFoundException(file);
+
+            var output = string.Empty;
+
+            var process = new Process();
+            process.StartInfo = new ProcessStartInfo()
+            {
+                FileName = executable,
+                Arguments = string.Join(" ", arguments.Distinct()),
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                CreateNoWindow = true
+            };
+            if (!string.IsNullOrWhiteSpace(gameFolder))
+                process.StartInfo.EnvironmentVariables["VPROJECT"] = gameFolder;
+
+            Logger.LogDebug("[Executing] {FileName} {Arguments}", Path.GetFileName(process.StartInfo.FileName), process.StartInfo.Arguments);
+
+            process.Start();
+
+            if (outputs || !string.IsNullOrWhiteSpace(targetFile))
+            {
+                var fileName = Path.GetFileName(file);
+                while (!process.StandardOutput.EndOfStream)
+                {
+                    var line = process.StandardOutput.ReadLine();
+                    if (!string.IsNullOrWhiteSpace(targetFile))
+                        File.AppendAllLines(targetFile, new[]
+                        {
+                            line
+                        });
+                    if (outputs) Logger.LogInformation("[{File}] {Line}", fileName, line);
+                }
+            }
+            else
+            {
+                output = process.StandardOutput.ReadToEnd();
+            }
+            process.WaitForExit();
+
+            return output;
+        }
     }
 }
